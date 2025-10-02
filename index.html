@@ -1247,30 +1247,35 @@
           
           // 設定載入狀態
           setSubmitButtonLoading(true);
+          hideModalAlert();
           
           try {
+            console.log('提交需求資料:', formData);
             const result = await submitNewRequest(formData);
+            console.log('新增需求回應:', result);
             
             if (result.success) {
               showModalAlert('需求新增成功！正在更新資料...', 'success');
               
-              // 1秒後關閉模態框並顯示需求ID
+              // 等待 3 秒讓使用者看到成功訊息
               setTimeout(() => {
                 closeAddRequestModal();
-                showRequestIdModal(result.requestId);
-                // 2秒後重新載入資料
+                if (result.requestId) {
+                  showRequestIdModal(result.requestId);
+                }
+                // 重新載入整個頁面以確保資料更新
                 setTimeout(() => {
-                  refreshData();
+                  window.location.reload();
                 }, 2000);
-              }, 1000);
+              }, 2000);
             } else {
               setSubmitButtonLoading(false);
-              showModalAlert('錯誤：' + result.message, 'error');
+              showModalAlert('新增失敗：' + (result.message || '未知錯誤'), 'error');
             }
           } catch (error) {
             setSubmitButtonLoading(false);
             showModalAlert('提交失敗：' + error.message, 'error');
-            console.error(error);
+            console.error('新增需求錯誤:', error);
           }
         });
       }
@@ -1308,26 +1313,30 @@
           
           // 設定載入狀態
           setApplyButtonLoading(true);
+          hideApplyAlert();
           
           try {
+            console.log('提交報名資料:', applyData);
             const result = await submitVolunteerApplication(applyData);
+            console.log('志工報名回應:', result);
             
             if (result.success) {
               showApplyAlert('報名成功！需求發布者會盡快與您聯繫。', 'success');
               
-              // 2秒後關閉模態框並重新載入資料
+              // 等待 3 秒讓使用者看到成功訊息
               setTimeout(() => {
                 closeApplyModal();
-                refreshData();
-              }, 2000);
+                // 重新載入整個頁面以確保資料更新
+                window.location.reload();
+              }, 3000);
             } else {
               setApplyButtonLoading(false);
-              showApplyAlert('報名失敗：' + result.message, 'error');
+              showApplyAlert('報名失敗：' + (result.message || '未知錯誤'), 'error');
             }
           } catch (error) {
             setApplyButtonLoading(false);
             showApplyAlert('報名失敗：' + error.message, 'error');
-            console.error(error);
+            console.error('志工報名錯誤:', error);
           }
         });
       }
