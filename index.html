@@ -34,20 +34,8 @@
 </head>
 <body class="bg-gray-50 min-h-screen antialiased">
   
-  <!-- GitHub Pages 載入指示器 -->
-  <div id="github-loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-    <div class="text-center">
-      <div class="spinner mx-auto mb-4"></div>
-      <h2 class="text-xl font-semibold text-gray-900 mb-2">載入志工媒合平台</h2>
-      <p class="text-gray-600">正在從 Google Apps Script 取得最新內容...</p>
-      <div class="mt-4 text-xs text-gray-500">
-        GitHub Pages v2.1-static
-      </div>
-    </div>
-  </div>
-
   <!-- 主要內容容器 -->
-  <div id="main-content" class="hidden">
+  <div id="main-content">
     <!-- 動態載入的內容會出現在這裡 -->
   </div>
 
@@ -78,9 +66,6 @@
       try {
         console.log('開始從 GAS 載入內容...');
         
-        // 顯示載入指示器
-        showLoading();
-        
         // 載入志工需求資料
         const dataResponse = await fetchGASData('data');
         if (dataResponse.success) {
@@ -91,8 +76,8 @@
         // 渲染頁面
         renderPage();
         
-        // 隱藏載入指示器，顯示主內容
-        hideLoading();
+        // 載入並顯示需求列表
+        displayData();
         
       } catch (error) {
         console.error('載入錯誤:', error);
@@ -250,9 +235,9 @@
           <p class="text-lg text-gray-600">連結需要幫助的人與願意付出的志工</p>
         </div>
         <div id="content" class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-6">
-          <div class="text-center py-16">
+          <div class="text-center py-16 col-span-full">
             <div class="spinner mx-auto mb-4"></div>
-            <p class="text-gray-600">載入中,請稍候..</p>
+            <p class="text-gray-600">載入志工需求列表中，請稍候...</p>
           </div>
         </div>
         
@@ -302,19 +287,12 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                      地點(縣市/鄉鎮) <span class="text-red-500">*</span>
+                      服務地點 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="location" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="例如: 高雄市、台南市安南區">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      詳細地址
-                    </label>
-                    <input type="text" id="address" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="例如: XX路XX號 (可不填)">
+                           placeholder="例如: 花蓮縣光復鄉中山路..."
+                           value="花蓮縣光復鄉中山路">
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -836,7 +814,7 @@
         name: document.getElementById('name').value.trim(),
         date: document.getElementById('date').value,
         location: document.getElementById('location').value.trim(),
-        address: document.getElementById('address').value.trim(),
+        address: '', // 已合併到 location
         needed: parseInt(document.getElementById('needed').value),
         description: document.getElementById('description').value.trim(),
         contact: document.getElementById('contact').value.trim(),
@@ -1119,22 +1097,18 @@
     }
     
     // 工具函數
-    function showLoading() {
-      document.getElementById('github-loading').classList.remove('hidden');
-      document.getElementById('main-content').classList.add('hidden');
-      document.getElementById('error-display').classList.add('hidden');
-    }
-    
-    function hideLoading() {
-      document.getElementById('github-loading').classList.add('hidden');
-      document.getElementById('main-content').classList.remove('hidden');
-    }
-    
     function showError(message) {
-      document.getElementById('error-message').textContent = message;
-      document.getElementById('github-loading').classList.add('hidden');
-      document.getElementById('main-content').classList.add('hidden');
-      document.getElementById('error-display').classList.remove('hidden');
+      const container = document.getElementById('content');
+      container.innerHTML = `
+        <div class="text-center py-16 col-span-full">
+          <div class="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">載入失敗</h2>
+          <p class="text-gray-600 mb-4">${message}</p>
+          <button onclick="retryLoad()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+            重新載入
+          </button>
+        </div>
+      `;
     }
     
     function retryLoad() {
