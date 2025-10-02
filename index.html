@@ -56,28 +56,28 @@
 
   <script>
     // 設定你的 Google Apps Script Web App URL
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxzMIVLN8Ok-UN_IGCm-NyAvXoMZrgIra7UKIHW79oSnryD_il_3lF5GdlZubKEU4g-vw/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzSJ80siEvoW_rx29Z7dVf-9gmXT4P-T-jgC01Qh0bAXJ02Q8JqpBM35VjjpgkMNRu1Mg/exec';
     
     // 全域變數
     let currentData = null;
     
-    // 主要載入函數
+    // 主要載入函數（只載入資料，不渲染頁面）
     async function loadFromGAS() {
       try {
-        console.log('開始從 GAS 載入內容...');
+        console.log('開始從 GAS 載入需求資料...');
         
         // 載入志工需求資料
         const dataResponse = await fetchGASData('data');
         if (dataResponse.success) {
           currentData = dataResponse.data;
           console.log('資料載入成功:', currentData.length, '筆需求');
+          
+          // 只更新需求列表區域
+          displayData();
+        } else {
+          console.error('資料載入失敗:', dataResponse.message);
+          showError('資料載入失敗: ' + (dataResponse.message || '未知錯誤'));
         }
-        
-        // 渲染頁面
-        renderPage();
-        
-        // 載入並顯示需求列表
-        displayData();
         
       } catch (error) {
         console.error('載入錯誤:', error);
@@ -1372,6 +1372,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       // 檢查是否有設定 API URL
       if (GAS_API_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
+        // 先渲染頁面結構
+        renderPage();
         showError('請先設定 GAS_API_URL\n\n步驟：\n1. 部署你的 Google Apps Script 為 Web 應用程式\n2. 複製部署網址\n3. 在程式碼第 47 行替換 YOUR_GAS_WEB_APP_URL_HERE\n4. 重新上傳到 GitHub');
         return;
       }
@@ -1380,10 +1382,14 @@
       testAPIConnection()
         .then(result => {
           console.log('API 連接測試成功:', result);
-          loadFromGAS();
+          // 先渲染頁面結構，再載入資料
+        renderPage();
+        loadFromGAS();
         })
         .catch(error => {
           console.error('API 連接測試失敗:', error);
+          // 先渲染頁面結構
+          renderPage();
           showError('無法連接到 Google Apps Script API\n\n可能原因：\n1. GAS_API_URL 設定錯誤\n2. Google Apps Script 未正確部署\n3. 權限設定問題\n\n請檢查：\n- 部署時選擇「任何人」存取權限\n- URL 是否正確\n- 是否已上傳 api.gs 檔案\n\n錯誤：' + error.message);
         });
         
