@@ -659,14 +659,57 @@
     // 重新整理資料
     async function refreshData() {
       try {
+        console.log('開始重新載入需求列表資料...');
+        
+        // 顯示載入狀態
+        const container = document.getElementById('content');
+        const originalContent = container.innerHTML;
+        container.innerHTML = `
+          <div class="text-center py-16 col-span-full">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">更新資料中，請稍候...</p>
+          </div>
+        `;
+        
         const dataResponse = await fetchGASData('data');
         if (dataResponse.success) {
           currentData = dataResponse.data;
+          console.log('資料重新載入成功，需求數量:', currentData.length);
           displayData();
+        } else {
+          console.error('重新載入失敗:', dataResponse.message);
+          container.innerHTML = originalContent;
+          // 顯示簡短的錯誤提示
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md z-50';
+          notification.textContent = '資料更新失敗，請稍後再試';
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 3000);
         }
       } catch (error) {
         console.error('重新整理失敗:', error);
-        alert('重新整理失敗: ' + error.message);
+        // 恢復原始內容
+        const container = document.getElementById('content');
+        if (container) {
+          displayData(); // 顯示原有資料
+        }
+        
+        // 顯示錯誤通知
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md z-50';
+        notification.textContent = '網路連接失敗，請檢查連線';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
       }
     }
     
@@ -833,10 +876,10 @@
             if (result.requestId) {
               showRequestIdModal(result.requestId);
             }
-            // 重新載入整個頁面以確保資料更新
+            // 重新載入需求列表資料
             setTimeout(() => {
-              console.log('重新載入頁面');
-              window.location.reload();
+              console.log('重新載入需求列表');
+              refreshData();
             }, 2000);
           }, 2000);
         } else {
@@ -901,9 +944,9 @@
           // 等待 3 秒讓使用者看到成功訊息
           setTimeout(() => {
             closeApplyModal();
-            // 重新載入整個頁面以確保資料更新
-            console.log('重新載入頁面');
-            window.location.reload();
+            // 重新載入需求列表資料
+            console.log('重新載入需求列表');
+            refreshData();
           }, 3000);
         } else {
           setApplyButtonLoading(false);
@@ -1238,6 +1281,9 @@
     
     // HTML 轉義函數
     function escapeHtml(unsafe) {
+      if (!unsafe || typeof unsafe !== 'string') {
+        return '';
+      }
       return unsafe
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
