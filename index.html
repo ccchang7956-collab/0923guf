@@ -543,12 +543,13 @@
         return timeB.getTime() - timeA.getTime();
       });
       
-      sortedData.forEach(row => {
+      sortedData.forEach((row, index) => {
         const [id, name, date, location, address, needed, registered, description, contact, phone, status, createTime] = row;
         
         const card = createCard({
           id, name, date, location, address, needed, registered, 
-          description, contact, phone, status, createTime
+          description, contact, phone, status, createTime,
+          displayNumber: index + 1 // 新增顯示編號
         });
         
         container.appendChild(card);
@@ -566,7 +567,9 @@
       card.innerHTML = `
         <div class="p-5 sm:p-6">
           <div class="flex justify-between items-start mb-4">
-            <h3 class="text-2xl sm:text-xl font-semibold text-gray-900 flex-1 leading-7">${data.name || '未命名需求'}</h3>
+            <h3 class="text-2xl sm:text-xl font-semibold text-gray-900 flex-1 leading-7">
+              <span class="text-blue-600 font-bold">#${data.displayNumber}</span> ${data.name || '未命名需求'}
+            </h3>
             <span class="ml-2 px-3 py-1.5 rounded-full text-base sm:text-sm font-medium ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
               ${isFull ? '已額滿' : '招募中'}
             </span>
