@@ -68,7 +68,7 @@
 
   <script>
     // 設定你的 Google Apps Script Web App URL
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwZ2yxVvXd3R3KlI5Q-NSY1iajpcCnNz3Een9eGjo1_y7RYWUzdrnaGdiuDMjujQmk0vQ/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwH-L02JplBOP5Ezj04oDBbjM2oAaevdUM781tCfOR5d-lyB9fjdnDhyPRZcVB_RgQVGw/exec';
     
     // 全域變數
     let currentData = null;
@@ -268,8 +268,260 @@
     function createModals() {
       const div = document.createElement('div');
       div.innerHTML = `
-        <!-- 這裡會動態加入各種模態框 -->
-        <div id="modal-container"></div>
+        <!-- 新增需求模態框 -->
+        <div id="addRequestModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">新增志工需求</h3>
+                  <button onclick="closeAddRequestModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="px-6 py-4">
+                <div id="modalAlert" class="hidden mb-4 p-4 rounded-md"></div>
+                <form id="requestForm" class="space-y-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      需求名稱 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="name" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如: 清理家園、陪伴長者">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      需要時間 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="datetime-local" id="date" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      地點(縣市/鄉鎮) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="location" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如: 高雄市、台南市安南區">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      詳細地址
+                    </label>
+                    <input type="text" id="address" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如: XX路XX號 (可不填)">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      需要志工人數 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" id="needed" required min="1" value="1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      需求詳細說明 <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="description" required rows="4"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="請詳細說明需要的協助內容"></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      聯絡人姓名 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="contact" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="請輸入您的姓名或稱呼">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      聯絡電話 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="tel" id="phone" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如: 0912-345-678">
+                  </div>
+                </form>
+              </div>
+              <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button type="button" onclick="closeAddRequestModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                  取消
+                </button>
+                <button type="submit" form="requestForm" id="submitBtn"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                  提交需求
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 志工報名模態框 -->
+        <div id="applyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">報名志工服務</h3>
+                  <button onclick="closeApplyModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="px-6 py-4">
+                <div id="applyAlert" class="hidden mb-4 p-4 rounded-md"></div>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h4 class="font-medium text-gray-900 mb-3">📋 您要報名的需求</h4>
+                  <div class="space-y-2 text-sm">
+                    <div><span class="font-medium">需求名稱：</span><span id="applyRequestName"></span></div>
+                    <div><span class="font-medium">服務時間：</span><span id="applyRequestDate"></span></div>
+                    <div><span class="font-medium">服務地點：</span><span id="applyRequestLocation"></span></div>
+                    <div><span class="font-medium">聯絡人：</span><span id="applyRequestContact"></span></div>
+                    <div><span class="font-medium">聯絡電話：</span><span id="applyRequestPhone"></span></div>
+                  </div>
+                </div>
+                <form id="applyForm" class="space-y-4">
+                  <input type="hidden" id="applyRequestId">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      您的姓名 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="volunteerName" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="請輸入您的真實姓名">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      聯絡電話 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="tel" id="volunteerPhone" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如：0912-345-678">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      聯絡信箱
+                    </label>
+                    <input type="email" id="volunteerEmail" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="例如：volunteer@example.com（選填）">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      備註說明
+                    </label>
+                    <textarea id="volunteerNote" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="有任何想說的話或特殊需求，請在此註明（選填）"></textarea>
+                  </div>
+                </form>
+              </div>
+              <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button type="button" onclick="closeApplyModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                  取消
+                </button>
+                <button type="submit" form="applyForm" id="applySubmitBtn"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                  確認報名
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 查詢需求模態框 -->
+        <div id="queryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">🔍 查詢我的需求</h3>
+                  <button onclick="closeQueryModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="px-6 py-4">
+                <div id="queryAlert" class="hidden mb-4 p-4 rounded-md"></div>
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    請輸入您的需求ID
+                  </label>
+                  <input type="text" id="queryRequestId" 
+                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         placeholder="例如：REQ1759308853376ABC">
+                  <p class="mt-2 text-sm text-gray-500">這是您發布需求時獲得的ID，用於查看報名者資料</p>
+                </div>
+                <div id="queryResult" class="hidden">
+                  <!-- 查詢結果將在這裡顯示 -->
+                </div>
+              </div>
+              <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button type="button" onclick="closeQueryModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                  取消
+                </button>
+                <button type="button" onclick="queryRequest()" id="queryBtn"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                  查詢
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 需求ID顯示模態框 -->
+        <div id="requestIdModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div class="px-6 py-6 text-center">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-4">需求發布成功！</h3>
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+                  <div class="text-sm text-blue-800 mb-2 font-medium">您的需求ID</div>
+                  <div class="bg-white border border-blue-300 rounded p-3 mb-3">
+                    <code id="displayRequestId" class="text-lg font-mono text-blue-900 select-all"></code>
+                  </div>
+                  <button onclick="copyRequestId()" 
+                          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    📋 複製ID
+                  </button>
+                </div>
+                <div class="text-left bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <div class="flex items-start">
+                    <div class="text-yellow-600 mr-2">⚠️</div>
+                    <div class="text-sm text-yellow-800">
+                      <div class="font-medium mb-2">重要提醒：</div>
+                      <ul class="space-y-1">
+                        <li>• 請務必複製並妥善保存此需求ID</li>
+                        <li>• 這是查詢報名志工的唯一憑證</li>
+                        <li>• 如遺失此ID將無法查看報名者資料</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-6 py-4 border-t border-gray-200 flex justify-center">
+                <button type="button" onclick="closeRequestIdModal()" 
+                        class="px-6 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md">
+                  我已複製，關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       `;
       return div;
     }
@@ -395,7 +647,7 @@
           
           <button class="w-full py-4 sm:py-2 px-4 rounded-lg font-medium transition-colors text-xl sm:text-sm ${isFull ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}" 
                   ${isFull ? 'disabled' : ''} 
-                  onclick="alert('報名功能開發中')">
+                  onclick="openApplyModal('${data.id}', '${escapeHtml(data.name)}', '${escapeHtml(data.contact)}', '${data.phone}', '${escapeHtml(data.location)}', '${formatDate(data.date)}')">
             ${isFull ? '🚫 已額滿' : '✋ 我要報名當志工'}
           </button>
         </div>
@@ -418,13 +670,249 @@
       }
     }
     
-    // 模態框函數 (簡化版)
+    // ============================================
+    // 模態框控制函數
+    // ============================================
+    
+    // 新增需求模態框
     function openAddRequestModal() {
-      alert('新增需求功能開發中\n請直接使用 Google Apps Script 版本');
+      document.getElementById('addRequestModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      // 設定預設時間
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      
+      const dateInput = document.getElementById('date');
+      dateInput.value = tomorrow.toISOString().slice(0, 16);
+      dateInput.min = new Date().toISOString().slice(0, 16);
     }
     
+    function closeAddRequestModal() {
+      document.getElementById('addRequestModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      document.getElementById('requestForm').reset();
+      hideModalAlert();
+      setSubmitButtonLoading(false);
+    }
+    
+    // 志工報名模態框
+    function openApplyModal(requestId, requestName, contact, phone, location, date) {
+      document.getElementById('applyModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      // 填入需求資訊
+      document.getElementById('applyRequestId').value = requestId;
+      document.getElementById('applyRequestName').textContent = requestName;
+      document.getElementById('applyRequestDate').textContent = date;
+      document.getElementById('applyRequestLocation').textContent = location;
+      document.getElementById('applyRequestContact').textContent = contact;
+      document.getElementById('applyRequestPhone').textContent = phone;
+      
+      // 清空表單
+      document.getElementById('applyForm').reset();
+      hideApplyAlert();
+    }
+    
+    function closeApplyModal() {
+      document.getElementById('applyModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      document.getElementById('applyForm').reset();
+      hideApplyAlert();
+      setApplyButtonLoading(false);
+    }
+    
+    // 查詢需求模態框
     function openQueryModal() {
-      alert('查詢需求功能開發中\n請直接使用 Google Apps Script 版本');
+      document.getElementById('queryModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('queryRequestId').value = '';
+      document.getElementById('queryResult').classList.add('hidden');
+      hideQueryAlert();
+    }
+    
+    function closeQueryModal() {
+      document.getElementById('queryModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      document.getElementById('queryRequestId').value = '';
+      document.getElementById('queryResult').classList.add('hidden');
+      hideQueryAlert();
+    }
+    
+    // 需求ID顯示模態框
+    function showRequestIdModal(requestId) {
+      document.getElementById('requestIdModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('displayRequestId').textContent = requestId;
+    }
+    
+    function closeRequestIdModal() {
+      document.getElementById('requestIdModal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    
+    // ============================================
+    // 表單處理函數
+    // ============================================
+    
+    // 新增需求表單提交
+    async function submitNewRequest(formData) {
+      try {
+        const response = await fetchGASData('add', { 
+          data: JSON.stringify(formData) 
+        });
+        return response;
+      } catch (error) {
+        throw new Error('提交失敗: ' + error.message);
+      }
+    }
+    
+    // 志工報名表單提交
+    async function submitVolunteerApplication(applyData) {
+      try {
+        const response = await fetchGASData('apply', { 
+          data: JSON.stringify(applyData) 
+        });
+        return response;
+      } catch (error) {
+        throw new Error('報名失敗: ' + error.message);
+      }
+    }
+    
+    // 查詢需求
+    async function queryRequest() {
+      const requestId = document.getElementById('queryRequestId').value.trim();
+      
+      if (!requestId) {
+        showQueryAlert('請輸入需求ID', 'error');
+        return;
+      }
+      
+      // 簡單的格式檢查
+      if (!requestId.startsWith('REQ') || requestId.length < 10) {
+        showQueryAlert('需求ID格式不正確，應該以REQ開頭', 'error');
+        return;
+      }
+      
+      // 設定載入狀態
+      const queryBtn = document.getElementById('queryBtn');
+      queryBtn.disabled = true;
+      queryBtn.innerHTML = `
+        <div class="flex items-center justify-center">
+          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+          查詢中...
+        </div>
+      `;
+      
+      try {
+        const result = await fetchGASData('query', { requestId: requestId });
+        queryBtn.disabled = false;
+        queryBtn.innerHTML = '查詢';
+        
+        if (result && result.success !== false) {
+          displayQueryResult(result);
+        } else {
+          showQueryAlert(result ? result.message : '查詢失敗', 'error');
+        }
+      } catch (error) {
+        queryBtn.disabled = false;
+        queryBtn.innerHTML = '查詢';
+        console.error('查詢錯誤:', error);
+        showQueryAlert('查詢失敗：' + error.message, 'error');
+      }
+    }
+    
+    // 顯示查詢結果
+    function displayQueryResult(result) {
+      const container = document.getElementById('queryResult');
+      
+      if (!result.applications || result.applications.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 bg-gray-50 rounded-lg">
+            <div class="text-gray-400 text-4xl mb-3">👥</div>
+            <p class="text-gray-600">目前還沒有人報名此需求</p>
+            <p class="text-gray-500 text-sm mt-1">等待志工報名中...</p>
+          </div>
+        `;
+        container.classList.remove('hidden');
+        return;
+      }
+      
+      // 顯示報名者清單
+      let html = `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center">
+            <div class="text-green-600 mr-2">✅</div>
+            <div class="text-green-800">
+              <div class="font-medium">找到您的需求！</div>
+              <div class="text-sm">共有 <strong>${result.applications.length}</strong> 位志工報名</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+      `;
+      
+      result.applications.forEach((app, index) => {
+        const [applicationId, requestId, volunteerName, volunteerPhone, volunteerEmail, volunteerNote, applicationTime, status] = app;
+        
+        html += `
+          <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div class="flex justify-between items-start mb-2">
+              <h6 class="font-medium text-gray-900">👤 ${volunteerName}</h6>
+              <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">${status}</span>
+            </div>
+            
+            <div class="space-y-1 text-sm">
+              <div class="flex items-center">
+                <span class="w-12 text-gray-600">📞</span>
+                <span class="font-medium mr-2">${volunteerPhone}</span>
+                <button onclick="copyToClipboard('${volunteerPhone}')" 
+                        class="text-blue-600 hover:text-blue-800 text-xs">
+                  複製
+                </button>
+              </div>
+              
+              ${volunteerEmail ? `
+              <div class="flex items-center">
+                <span class="w-12 text-gray-600">📧</span>
+                <span class="mr-2">${volunteerEmail}</span>
+                <button onclick="copyToClipboard('${volunteerEmail}')" 
+                        class="text-blue-600 hover:text-blue-800 text-xs">
+                  複製
+                </button>
+              </div>
+              ` : ''}
+              
+              <div class="flex items-center">
+                <span class="w-12 text-gray-600">⏰</span>
+                <span class="text-gray-700">${formatRelativeTime(applicationTime)}</span>
+              </div>
+              
+              ${volunteerNote ? `
+              <div class="mt-2 pt-2 border-t border-gray-200">
+                <div class="text-gray-600 text-xs mb-1">💬 備註：</div>
+                <div class="text-gray-700">${volunteerNote}</div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `
+        </div>
+        <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div class="text-blue-900 text-sm">
+            <div class="font-medium mb-1">📋 聯絡提醒</div>
+            <div>請主動聯絡報名的志工，確認服務時間和地點</div>
+          </div>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+      container.classList.remove('hidden');
     }
     
     // 工具函數
@@ -584,6 +1072,122 @@
       throw new Error('所有連接方式都失敗');
     }
     
+    // ============================================
+    // 工具函數與事件監聽器
+    // ============================================
+    
+    // HTML 轉義函數
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    
+    // 複製到剪貼簿
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(function() {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md z-50';
+        notification.textContent = '已複製到剪貼簿';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 2000);
+      }).catch(function(err) {
+        console.error('複製失敗:', err);
+        alert('複製失敗，請手動複製');
+      });
+    }
+    
+    // 複製需求ID
+    function copyRequestId() {
+      const requestId = document.getElementById('displayRequestId').textContent;
+      copyToClipboard(requestId);
+    }
+    
+    // 提示訊息顯示函數
+    function showModalAlert(message, type) {
+      const alert = document.getElementById('modalAlert');
+      alert.textContent = message;
+      alert.className = `mb-4 p-4 rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+      alert.classList.remove('hidden');
+      
+      if (type === 'error') {
+        setTimeout(() => hideModalAlert(), 5000);
+      }
+    }
+    
+    function hideModalAlert() {
+      document.getElementById('modalAlert').classList.add('hidden');
+    }
+    
+    function showApplyAlert(message, type) {
+      const alert = document.getElementById('applyAlert');
+      alert.textContent = message;
+      alert.className = `mb-4 p-4 rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+      alert.classList.remove('hidden');
+      
+      if (type === 'error') {
+        setTimeout(() => hideApplyAlert(), 5000);
+      }
+    }
+    
+    function hideApplyAlert() {
+      document.getElementById('applyAlert').classList.add('hidden');
+    }
+    
+    function showQueryAlert(message, type) {
+      const alert = document.getElementById('queryAlert');
+      alert.textContent = message;
+      alert.className = `mb-4 p-4 rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+      alert.classList.remove('hidden');
+      
+      if (type === 'error') {
+        setTimeout(() => hideQueryAlert(), 5000);
+      }
+    }
+    
+    function hideQueryAlert() {
+      document.getElementById('queryAlert').classList.add('hidden');
+    }
+    
+    // 按鈕載入狀態控制
+    function setSubmitButtonLoading(loading) {
+      const submitBtn = document.getElementById('submitBtn');
+      if (loading) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <div class="flex items-center justify-center">
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            提交中...
+          </div>
+        `;
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '提交需求';
+      }
+    }
+    
+    function setApplyButtonLoading(loading) {
+      const submitBtn = document.getElementById('applySubmitBtn');
+      if (loading) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <div class="flex items-center justify-center">
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            報名中...
+          </div>
+        `;
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '確認報名';
+      }
+    }
+    
     // 頁面載入完成後開始
     document.addEventListener('DOMContentLoaded', function() {
       // 檢查是否有設定 API URL
@@ -602,8 +1206,132 @@
           console.error('API 連接測試失敗:', error);
           showError('無法連接到 Google Apps Script API\n\n可能原因：\n1. GAS_API_URL 設定錯誤\n2. Google Apps Script 未正確部署\n3. 權限設定問題\n\n請檢查：\n- 部署時選擇「任何人」存取權限\n- URL 是否正確\n- 是否已上傳 api.gs 檔案\n\n錯誤：' + error.message);
         });
+        
+      // ============================================
+      // 表單事件監聽器
+      // ============================================
+      
+      // 新增需求表單
+      const requestForm = document.getElementById('requestForm');
+      if (requestForm) {
+        requestForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          // 防止重複提交
+          const submitBtn = document.getElementById('submitBtn');
+          if (submitBtn.disabled) return;
+          
+          // 收集表單資料
+          const formData = {
+            name: document.getElementById('name').value.trim(),
+            date: document.getElementById('date').value,
+            location: document.getElementById('location').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            needed: parseInt(document.getElementById('needed').value),
+            description: document.getElementById('description').value.trim(),
+            contact: document.getElementById('contact').value.trim(),
+            phone: document.getElementById('phone').value.trim()
+          };
+          
+          // 驗證
+          if (!formData.name || !formData.date || !formData.location || 
+              !formData.description || !formData.contact || !formData.phone) {
+            showModalAlert('請填寫所有必填欄位', 'error');
+            return;
+          }
+          
+          if (formData.needed < 1) {
+            showModalAlert('志工人數必須大於 0', 'error');
+            return;
+          }
+          
+          // 設定載入狀態
+          setSubmitButtonLoading(true);
+          
+          try {
+            const result = await submitNewRequest(formData);
+            
+            if (result.success) {
+              showModalAlert('需求新增成功！正在更新資料...', 'success');
+              
+              // 1秒後關閉模態框並顯示需求ID
+              setTimeout(() => {
+                closeAddRequestModal();
+                showRequestIdModal(result.requestId);
+                // 2秒後重新載入資料
+                setTimeout(() => {
+                  refreshData();
+                }, 2000);
+              }, 1000);
+            } else {
+              setSubmitButtonLoading(false);
+              showModalAlert('錯誤：' + result.message, 'error');
+            }
+          } catch (error) {
+            setSubmitButtonLoading(false);
+            showModalAlert('提交失敗：' + error.message, 'error');
+            console.error(error);
+          }
+        });
+      }
+      
+      // 志工報名表單
+      const applyForm = document.getElementById('applyForm');
+      if (applyForm) {
+        applyForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          // 防止重複提交
+          const submitBtn = document.getElementById('applySubmitBtn');
+          if (submitBtn.disabled) return;
+          
+          // 收集表單資料
+          const applyData = {
+            requestId: document.getElementById('applyRequestId').value,
+            volunteerName: document.getElementById('volunteerName').value.trim(),
+            volunteerPhone: document.getElementById('volunteerPhone').value.trim(),
+            volunteerEmail: document.getElementById('volunteerEmail').value.trim(),
+            volunteerNote: document.getElementById('volunteerNote').value.trim()
+          };
+          
+          // 驗證必填欄位
+          if (!applyData.volunteerName || !applyData.volunteerPhone) {
+            showApplyAlert('請填寫姓名和聯絡電話', 'error');
+            return;
+          }
+          
+          // 驗證電話格式（簡單檢查）
+          if (!/^[\d\-\+\(\)\s]+$/.test(applyData.volunteerPhone)) {
+            showApplyAlert('請輸入有效的電話號碼', 'error');
+            return;
+          }
+          
+          // 設定載入狀態
+          setApplyButtonLoading(true);
+          
+          try {
+            const result = await submitVolunteerApplication(applyData);
+            
+            if (result.success) {
+              showApplyAlert('報名成功！需求發布者會盡快與您聯繫。', 'success');
+              
+              // 2秒後關閉模態框並重新載入資料
+              setTimeout(() => {
+                closeApplyModal();
+                refreshData();
+              }, 2000);
+            } else {
+              setApplyButtonLoading(false);
+              showApplyAlert('報名失敗：' + result.message, 'error');
+            }
+          } catch (error) {
+            setApplyButtonLoading(false);
+            showApplyAlert('報名失敗：' + error.message, 'error');
+            console.error(error);
+          }
+        });
+      }
     });
   </script>
 </body>
 </html>
-
