@@ -32,7 +32,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen antialiased">
+<body class="bg-gray-300 min-h-screen antialiased">
   
   <!-- 主要內容容器 -->
   <div id="main-content">
@@ -368,7 +368,7 @@
               </div>
               <div class="px-6 py-4">
                 <div id="applyAlert" class="hidden mb-4 p-4 rounded-md"></div>
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <div class="bg-gray-100 rounded-lg p-4 mb-6 border border-gray-200">
                   <h4 class="font-medium text-gray-900 mb-3">📋 您要報名的需求</h4>
                   <div class="space-y-2 text-sm">
                     <div><span class="font-medium">需求名稱：</span><span id="applyRequestName"></span></div>
@@ -558,7 +558,7 @@
     // 建立需求卡片 (與原 index.html 相同的邏輯)
     function createCard(data) {
       const card = document.createElement('div');
-      card.className = 'bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden sm:rounded-xl';
+      card.className = 'bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden sm:rounded-xl border border-gray-300';
       
       const isFull = data.status === '已額滿' || (data.needed > 0 && data.registered >= data.needed);
       const progress = data.needed > 0 ? (data.registered / data.needed * 100) : 0;
@@ -603,7 +603,7 @@
           </div>
           
           ${data.description ? `
-          <div class="mb-4 p-4 bg-gray-50 rounded-md">
+          <div class="mb-4 p-4 bg-gray-100 rounded-md border border-gray-200">
             <div class="text-lg sm:text-sm font-medium text-gray-700 mb-3">📋 需求說明</div>
             <div class="text-lg sm:text-sm text-gray-600 leading-relaxed">${data.description}</div>
           </div>
