@@ -687,6 +687,16 @@
       const dateInput = document.getElementById('date');
       dateInput.value = tomorrow.toISOString().slice(0, 16);
       dateInput.min = new Date().toISOString().slice(0, 16);
+      
+      // 重新綁定表單事件（確保事件監聽器存在）
+      setTimeout(() => {
+        const form = document.getElementById('requestForm');
+        if (form && !form.hasSubmitListener) {
+          console.log('綁定新增需求表單事件');
+          form.addEventListener('submit', handleRequestFormSubmit);
+          form.hasSubmitListener = true;
+        }
+      }, 100);
     }
     
     function closeAddRequestModal() {
@@ -713,6 +723,16 @@
       // 清空表單
       document.getElementById('applyForm').reset();
       hideApplyAlert();
+      
+      // 重新綁定表單事件（確保事件監聽器存在）
+      setTimeout(() => {
+        const form = document.getElementById('applyForm');
+        if (form && !form.hasSubmitListener) {
+          console.log('綁定志工報名表單事件');
+          form.addEventListener('submit', handleApplyFormSubmit);
+          form.hasSubmitListener = true;
+        }
+      }, 100);
     }
     
     function closeApplyModal() {
@@ -755,6 +775,146 @@
     // ============================================
     // 表單處理函數
     // ============================================
+    
+    // 新增需求表單處理函數
+    async function handleRequestFormSubmit(e) {
+      e.preventDefault();
+      console.log('新增需求表單提交被觸發');
+      
+      // 防止重複提交
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn.disabled) {
+        console.log('按鈕已禁用，防止重複提交');
+        return;
+      }
+      
+      // 收集表單資料
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        date: document.getElementById('date').value,
+        location: document.getElementById('location').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        needed: parseInt(document.getElementById('needed').value),
+        description: document.getElementById('description').value.trim(),
+        contact: document.getElementById('contact').value.trim(),
+        phone: document.getElementById('phone').value.trim()
+      };
+      
+      console.log('收集到的表單資料:', formData);
+      
+      // 驗證
+      if (!formData.name || !formData.date || !formData.location || 
+          !formData.description || !formData.contact || !formData.phone) {
+        showModalAlert('請填寫所有必填欄位', 'error');
+        return;
+      }
+      
+      if (formData.needed < 1) {
+        showModalAlert('志工人數必須大於 0', 'error');
+        return;
+      }
+      
+      // 設定載入狀態
+      console.log('設定載入狀態');
+      setSubmitButtonLoading(true);
+      hideModalAlert();
+      
+      try {
+        console.log('提交需求資料:', formData);
+        const result = await submitNewRequest(formData);
+        console.log('新增需求回應:', result);
+        
+        if (result.success) {
+          showModalAlert('需求新增成功！正在更新資料...', 'success');
+          
+          // 等待 3 秒讓使用者看到成功訊息
+          setTimeout(() => {
+            closeAddRequestModal();
+            if (result.requestId) {
+              showRequestIdModal(result.requestId);
+            }
+            // 重新載入整個頁面以確保資料更新
+            setTimeout(() => {
+              console.log('重新載入頁面');
+              window.location.reload();
+            }, 2000);
+          }, 2000);
+        } else {
+          setSubmitButtonLoading(false);
+          showModalAlert('新增失敗：' + (result.message || '未知錯誤'), 'error');
+        }
+      } catch (error) {
+        setSubmitButtonLoading(false);
+        showModalAlert('提交失敗：' + error.message, 'error');
+        console.error('新增需求錯誤:', error);
+      }
+    }
+    
+    // 志工報名表單處理函數
+    async function handleApplyFormSubmit(e) {
+      e.preventDefault();
+      console.log('志工報名表單提交被觸發');
+      
+      // 防止重複提交
+      const submitBtn = document.getElementById('applySubmitBtn');
+      if (submitBtn.disabled) {
+        console.log('按鈕已禁用，防止重複提交');
+        return;
+      }
+      
+      // 收集表單資料
+      const applyData = {
+        requestId: document.getElementById('applyRequestId').value,
+        volunteerName: document.getElementById('volunteerName').value.trim(),
+        volunteerPhone: document.getElementById('volunteerPhone').value.trim(),
+        volunteerEmail: document.getElementById('volunteerEmail').value.trim(),
+        volunteerNote: document.getElementById('volunteerNote').value.trim()
+      };
+      
+      console.log('收集到的報名資料:', applyData);
+      
+      // 驗證必填欄位
+      if (!applyData.volunteerName || !applyData.volunteerPhone) {
+        showApplyAlert('請填寫姓名和聯絡電話', 'error');
+        return;
+      }
+      
+      // 驗證電話格式（簡單檢查）
+      if (!/^[\d\-\+\(\)\s]+$/.test(applyData.volunteerPhone)) {
+        showApplyAlert('請輸入有效的電話號碼', 'error');
+        return;
+      }
+      
+      // 設定載入狀態
+      console.log('設定載入狀態');
+      setApplyButtonLoading(true);
+      hideApplyAlert();
+      
+      try {
+        console.log('提交報名資料:', applyData);
+        const result = await submitVolunteerApplication(applyData);
+        console.log('志工報名回應:', result);
+        
+        if (result.success) {
+          showApplyAlert('報名成功！需求發布者會盡快與您聯繫。', 'success');
+          
+          // 等待 3 秒讓使用者看到成功訊息
+          setTimeout(() => {
+            closeApplyModal();
+            // 重新載入整個頁面以確保資料更新
+            console.log('重新載入頁面');
+            window.location.reload();
+          }, 3000);
+        } else {
+          setApplyButtonLoading(false);
+          showApplyAlert('報名失敗：' + (result.message || '未知錯誤'), 'error');
+        }
+      } catch (error) {
+        setApplyButtonLoading(false);
+        showApplyAlert('報名失敗：' + error.message, 'error');
+        console.error('志工報名錯誤:', error);
+      }
+    }
     
     // 新增需求表單提交
     async function submitNewRequest(formData) {
@@ -1211,135 +1371,8 @@
       // 表單事件監聽器
       // ============================================
       
-      // 新增需求表單
-      const requestForm = document.getElementById('requestForm');
-      if (requestForm) {
-        requestForm.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          
-          // 防止重複提交
-          const submitBtn = document.getElementById('submitBtn');
-          if (submitBtn.disabled) return;
-          
-          // 收集表單資料
-          const formData = {
-            name: document.getElementById('name').value.trim(),
-            date: document.getElementById('date').value,
-            location: document.getElementById('location').value.trim(),
-            address: document.getElementById('address').value.trim(),
-            needed: parseInt(document.getElementById('needed').value),
-            description: document.getElementById('description').value.trim(),
-            contact: document.getElementById('contact').value.trim(),
-            phone: document.getElementById('phone').value.trim()
-          };
-          
-          // 驗證
-          if (!formData.name || !formData.date || !formData.location || 
-              !formData.description || !formData.contact || !formData.phone) {
-            showModalAlert('請填寫所有必填欄位', 'error');
-            return;
-          }
-          
-          if (formData.needed < 1) {
-            showModalAlert('志工人數必須大於 0', 'error');
-            return;
-          }
-          
-          // 設定載入狀態
-          setSubmitButtonLoading(true);
-          hideModalAlert();
-          
-          try {
-            console.log('提交需求資料:', formData);
-            const result = await submitNewRequest(formData);
-            console.log('新增需求回應:', result);
-            
-            if (result.success) {
-              showModalAlert('需求新增成功！正在更新資料...', 'success');
-              
-              // 等待 3 秒讓使用者看到成功訊息
-              setTimeout(() => {
-                closeAddRequestModal();
-                if (result.requestId) {
-                  showRequestIdModal(result.requestId);
-                }
-                // 重新載入整個頁面以確保資料更新
-                setTimeout(() => {
-                  window.location.reload();
-                }, 2000);
-              }, 2000);
-            } else {
-              setSubmitButtonLoading(false);
-              showModalAlert('新增失敗：' + (result.message || '未知錯誤'), 'error');
-            }
-          } catch (error) {
-            setSubmitButtonLoading(false);
-            showModalAlert('提交失敗：' + error.message, 'error');
-            console.error('新增需求錯誤:', error);
-          }
-        });
-      }
-      
-      // 志工報名表單
-      const applyForm = document.getElementById('applyForm');
-      if (applyForm) {
-        applyForm.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          
-          // 防止重複提交
-          const submitBtn = document.getElementById('applySubmitBtn');
-          if (submitBtn.disabled) return;
-          
-          // 收集表單資料
-          const applyData = {
-            requestId: document.getElementById('applyRequestId').value,
-            volunteerName: document.getElementById('volunteerName').value.trim(),
-            volunteerPhone: document.getElementById('volunteerPhone').value.trim(),
-            volunteerEmail: document.getElementById('volunteerEmail').value.trim(),
-            volunteerNote: document.getElementById('volunteerNote').value.trim()
-          };
-          
-          // 驗證必填欄位
-          if (!applyData.volunteerName || !applyData.volunteerPhone) {
-            showApplyAlert('請填寫姓名和聯絡電話', 'error');
-            return;
-          }
-          
-          // 驗證電話格式（簡單檢查）
-          if (!/^[\d\-\+\(\)\s]+$/.test(applyData.volunteerPhone)) {
-            showApplyAlert('請輸入有效的電話號碼', 'error');
-            return;
-          }
-          
-          // 設定載入狀態
-          setApplyButtonLoading(true);
-          hideApplyAlert();
-          
-          try {
-            console.log('提交報名資料:', applyData);
-            const result = await submitVolunteerApplication(applyData);
-            console.log('志工報名回應:', result);
-            
-            if (result.success) {
-              showApplyAlert('報名成功！需求發布者會盡快與您聯繫。', 'success');
-              
-              // 等待 3 秒讓使用者看到成功訊息
-              setTimeout(() => {
-                closeApplyModal();
-                // 重新載入整個頁面以確保資料更新
-                window.location.reload();
-              }, 3000);
-            } else {
-              setApplyButtonLoading(false);
-              showApplyAlert('報名失敗：' + (result.message || '未知錯誤'), 'error');
-            }
-          } catch (error) {
-            setApplyButtonLoading(false);
-            showApplyAlert('報名失敗：' + error.message, 'error');
-            console.error('志工報名錯誤:', error);
-          }
-        });
-      }
+      // 事件監聽器現在透過 openModal 函數動態綁定，不需要在這裡重複綁定
+      console.log('頁面載入完成，事件監聽器將在開啟模態框時動態綁定');
     });
   </script>
 </body>
