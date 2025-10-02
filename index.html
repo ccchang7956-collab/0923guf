@@ -66,6 +66,17 @@
       try {
         console.log('開始從 GAS 載入需求資料...');
         
+        // 確保載入區域顯示載入狀態
+        const container = document.getElementById('content');
+        if (container && !container.innerHTML.includes('載入志工需求列表中')) {
+          container.innerHTML = `
+            <div class="text-center py-16 col-span-full">
+              <div class="spinner mx-auto mb-4"></div>
+              <p class="text-gray-600">載入志工需求列表中，請稍候...</p>
+            </div>
+          `;
+        }
+        
         // 載入志工需求資料
         const dataResponse = await fetchGASData('data');
         if (dataResponse.success) {
@@ -1370,28 +1381,21 @@
     
     // 頁面載入完成後開始
     document.addEventListener('DOMContentLoaded', function() {
-      // 檢查是否有設定 API URL
-      if (GAS_API_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
-        // 先渲染頁面結構
-        renderPage();
-        showError('請先設定 GAS_API_URL\n\n步驟：\n1. 部署你的 Google Apps Script 為 Web 應用程式\n2. 複製部署網址\n3. 在程式碼第 47 行替換 YOUR_GAS_WEB_APP_URL_HERE\n4. 重新上傳到 GitHub');
-        return;
-      }
+      // 🎯 第一步：立即渲染頁面結構（不等待任何檢查）
+      console.log('立即渲染頁面結構');
+      renderPage();
       
-      // 先測試 API 連接
-      testAPIConnection()
-        .then(result => {
-          console.log('API 連接測試成功:', result);
-          // 先渲染頁面結構，再載入資料
-        renderPage();
+      // 🎯 第二步：檢查設定並載入資料
+      setTimeout(() => {
+        // 檢查是否有設定 API URL
+        if (GAS_API_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
+          showError('請先設定 GAS_API_URL\n\n步驟：\n1. 部署你的 Google Apps Script 為 Web 應用程式\n2. 複製部署網址\n3. 在程式碼第 47 行替換 YOUR_GAS_WEB_APP_URL_HERE\n4. 重新上傳到 GitHub');
+          return;
+        }
+        
+        // 🎯 第三步：背景載入資料（不影響頁面顯示）
         loadFromGAS();
-        })
-        .catch(error => {
-          console.error('API 連接測試失敗:', error);
-          // 先渲染頁面結構
-          renderPage();
-          showError('無法連接到 Google Apps Script API\n\n可能原因：\n1. GAS_API_URL 設定錯誤\n2. Google Apps Script 未正確部署\n3. 權限設定問題\n\n請檢查：\n- 部署時選擇「任何人」存取權限\n- URL 是否正確\n- 是否已上傳 api.gs 檔案\n\n錯誤：' + error.message);
-        });
+      }, 100); // 給頁面渲染一點時間
         
       // ============================================
       // 表單事件監聽器
