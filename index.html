@@ -102,20 +102,90 @@
     
     // 從 GAS API 取得資料
     async function fetchGASData(action, params = {}) {
-      const url = new URL(GAS_API_URL);
-      url.searchParams.set('action', action);
-      
-      // 添加額外參數
-      Object.keys(params).forEach(key => {
-        url.searchParams.set(key, params[key]);
-      });
-      
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      try {
+        // 建構 URL
+        const url = new URL(GAS_API_URL);
+        url.searchParams.set('action', action);
+        
+        // 添加額外參數
+        Object.keys(params).forEach(key => {
+          url.searchParams.set(key, params[key]);
+        });
+        
+        console.log('正在呼叫 API:', url.toString());
+        
+        // 使用 no-cors 模式作為備援
+        let response;
+        try {
+          response = await fetch(url.toString(), {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json',
+            }
+          });
+        } catch (corsError) {
+          console.warn('CORS 請求失敗，嘗試 JSONP:', corsError);
+          // 改用 JSONP
+          return await fetchWithJSONP(url.toString());
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('API 回應:', data);
+        return data;
+        
+      } catch (error) {
+        console.error('fetchGASData 錯誤:', error);
+        // 嘗試 JSONP 作為備援
+        if (!error.message.includes('JSONP')) {
+          console.log('嘗試 JSONP 備援方案');
+          return await fetchWithJSONP(GAS_API_URL + '?action=' + action);
+        }
+        throw error;
       }
-      
-      return await response.json();
+    }
+    
+    // JSONP 備援方案
+    function fetchWithJSONP(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        
+        // 建立 JSONP URL
+        const jsonpUrl = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+        
+        // 建立 script 標籤
+        const script = document.createElement('script');
+        script.src = jsonpUrl;
+        
+        // 設定回調函數
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
+        
+        // 錯誤處理
+        script.onerror = function() {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('JSONP 請求失敗'));
+        };
+        
+        // 超時處理
+        setTimeout(() => {
+          if (window[callbackName]) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error('JSONP 請求超時'));
+          }
+        }, 10000);
+        
+        document.body.appendChild(script);
+      });
     }
     
     // 渲染主頁面
@@ -454,17 +524,85 @@
       }
     }
     
+    // 測試 API 連接
+    async function testAPIConnection() {
+      console.log('測試 API 連接...');
+      console.log('GAS_API_URL:', GAS_API_URL);
+      
+      // 測試不同的連接方式
+      const testMethods = [
+        {
+          name: 'CORS fetch',
+          test: async () => {
+            const response = await fetch(GAS_API_URL + '?action=data', {
+              method: 'GET',
+              mode: 'cors'
+            });
+            return await response.json();
+          }
+        },
+        {
+          name: 'No-CORS fetch',
+          test: async () => {
+            const response = await fetch(GAS_API_URL + '?action=data', {
+              method: 'GET',
+              mode: 'no-cors'
+            });
+            return { success: true, note: 'no-cors 模式，無法讀取回應內容' };
+          }
+        },
+        {
+          name: 'JSONP',
+          test: async () => {
+            return await fetchWithJSONP(GAS_API_URL + '?action=data');
+          }
+        },
+        {
+          name: 'Simple GET (無參數)',
+          test: async () => {
+            const response = await fetch(GAS_API_URL);
+            return { success: true, note: '基本連接成功' };
+          }
+        }
+      ];
+      
+      for (const method of testMethods) {
+        try {
+          console.log(`嘗試 ${method.name}...`);
+          const result = await method.test();
+          console.log(`${method.name} 成功:`, result);
+          
+          if (result && (result.success !== false)) {
+            console.log('找到可用的連接方式:', method.name);
+            return { method: method.name, data: result };
+          }
+        } catch (error) {
+          console.warn(`${method.name} 失敗:`, error.message);
+        }
+      }
+      
+      throw new Error('所有連接方式都失敗');
+    }
+    
     // 頁面載入完成後開始
     document.addEventListener('DOMContentLoaded', function() {
       // 檢查是否有設定 API URL
       if (GAS_API_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
-        showError('請先設定 GAS_API_URL\n在程式碼中將 YOUR_GAS_WEB_APP_URL_HERE 替換為你的 Google Apps Script Web App URL');
+        showError('請先設定 GAS_API_URL\n\n步驟：\n1. 部署你的 Google Apps Script 為 Web 應用程式\n2. 複製部署網址\n3. 在程式碼第 47 行替換 YOUR_GAS_WEB_APP_URL_HERE\n4. 重新上傳到 GitHub');
         return;
       }
       
-      loadFromGAS();
+      // 先測試 API 連接
+      testAPIConnection()
+        .then(result => {
+          console.log('API 連接測試成功:', result);
+          loadFromGAS();
+        })
+        .catch(error => {
+          console.error('API 連接測試失敗:', error);
+          showError('無法連接到 Google Apps Script API\n\n可能原因：\n1. GAS_API_URL 設定錯誤\n2. Google Apps Script 未正確部署\n3. 權限設定問題\n\n請檢查：\n- 部署時選擇「任何人」存取權限\n- URL 是否正確\n- 是否已上傳 api.gs 檔案\n\n錯誤：' + error.message);
+        });
     });
   </script>
 </body>
 </html>
-
